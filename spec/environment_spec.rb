@@ -77,45 +77,47 @@ describe SeedDump do
       end
     end
 
-    describe 'MODEL' do
-      it 'if MODEL is not specified it should dump all non-empty models' do
-        FactoryGirl.create(:another_sample)
+    ['', 'S'].each do |model_suffix|
+      model_env = 'MODEL' + model_suffix
 
-        [Sample, AnotherSample].each do |model|
-          SeedDump.should_receive(:dump).with(model, anything)
+      describe model_env do
+        context "if #{model_env} is not specified" do
+          it "should dump all non-empty models" do
+            FactoryGirl.create(:another_sample)
+
+            [Sample, AnotherSample].each do |model|
+              SeedDump.should_receive(:dump).with(model, anything)
+            end
+
+            SeedDump.dump_using_environment
+          end
         end
 
-        SeedDump.dump_using_environment
-      end
+        context "if #{model_env} is specified" do
+          it "should dump only the specified model" do
+            FactoryGirl.create(:another_sample)
 
-      it 'if MODEL is specified it should only dump the specified model' do
-        FactoryGirl.create(:another_sample)
+            SeedDump.should_receive(:dump).with(Sample, anything)
 
-        SeedDump.should_receive(:dump).with(Sample, anything)
+            SeedDump.dump_using_environment(model_env => 'Sample')
+          end
 
-        SeedDump.dump_using_environment('MODEL' => 'Sample')
+          it "should not dump empty models" do
+            SeedDump.should_not_receive(:dump).with(EmptyModel, anything)
+
+            SeedDump.dump_using_environment(model_env => 'EmptyModel, Sample')
+          end
+        end
       end
     end
 
-    describe 'MODELS' do
-      it 'if MODELS is not specified it should dump all non-empty models' do
+    describe "MODELS_EXCLUDE" do
+      it "should dump all non-empty models except the specified models" do
         FactoryGirl.create(:another_sample)
-
-        [Sample, AnotherSample].each do |model|
-          SeedDump.should_receive(:dump).with(model, anything)
-        end
-
-        SeedDump.dump_using_environment
-      end
-
-      it 'if MODELS is specified it should only dump those models' do
-        FactoryGirl.create(:another_sample)
-        FactoryGirl.create(:yet_another_sample)
 
         SeedDump.should_receive(:dump).with(Sample, anything)
-        SeedDump.should_receive(:dump).with(AnotherSample, anything)
 
-        SeedDump.dump_using_environment('MODELS' => 'Sample, AnotherSample')
+        SeedDump.dump_using_environment('MODELS_EXCLUDE' => 'AnotherSample')
       end
     end
 

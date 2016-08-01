@@ -4,17 +4,28 @@ class SeedDump
     def dump_using_environment(env = {})
       Rails.application.eager_load!
 
-      models = if env['MODEL'] || env['MODELS']
-                 (env['MODEL'] || env['MODELS']).split(',').collect {|x| x.strip.underscore.singularize.camelize.constantize }
+      models_env = env['MODEL'] || env['MODELS']
+      models = if models_env
+                 models_env.split(',')
+                           .collect {|x| x.strip.underscore.singularize.camelize.constantize }
                else
-                 ActiveRecord::Base.descendants.select do |model|
-                   (model.to_s != 'ActiveRecord::SchemaMigration') && \
-                    model.table_exists? && \
-                    model.exists?
-                 end
+                 ActiveRecord::Base.descendants
+               end
+
+      models = models.select do |model|
+                 (model.to_s != 'ActiveRecord::SchemaMigration') && \
+                  model.table_exists? && \
+                  model.exists?
                end
 
       append = (env['APPEND'] == 'true')
+
+      models_exclude_env = env['MODELS_EXCLUDE']
+      if models_exclude_env
+        models_exclude_env.split(',')
+                          .collect {|x| x.strip.underscore.singularize.camelize.constantize }
+                          .each { |exclude| models.delete(exclude) }
+      end
 
       models.each do |model|
         model = model.limit(env['LIMIT'].to_i) if env['LIMIT']
@@ -31,4 +42,3 @@ class SeedDump
     end
   end
 end
-
