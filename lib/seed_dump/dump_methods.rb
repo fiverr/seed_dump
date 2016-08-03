@@ -66,7 +66,6 @@ class SeedDump
     end
 
     def write_records_to_io(records, io, options)
-      return if records.nil? || records.empty? 
       options[:exclude] ||= [:id, :created_at, :updated_at]
 
       method = options[:import] ? 'import' : 'create!'
